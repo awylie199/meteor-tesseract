@@ -7,7 +7,6 @@ Meteor.startup(function() {
 				const DEBUG = process.env.NODE_ENV !== 'production';
 
 				const fs = require('fs');
-				const tesseract = require('node-tesseract');
 				const prefixes = Object.keys(process.env).reduce((prev, curr)=> {
 					if (/^TESSDATA_/.test(curr)) {
 						prev.push(curr);
@@ -15,6 +14,7 @@ Meteor.startup(function() {
 					return prev;
 				}, ['eng']);
 
+				let tesseract = require('node-tesseract');
 				let stats;
 				let tesseractPath = (
 						Meteor.settings.private.hasOwnProperty('tesseract') &&
@@ -38,7 +38,7 @@ Meteor.startup(function() {
 				}
 
 				if ( typeof tesseract !== 'undefined') {
-					Object.create(tesseract, {
+					tesseract = Object.create(tesseract, {
 						translateText : {
 							value (image, l = 'eng', psm = 6, binary = tesseractPath ) {
 
@@ -74,6 +74,7 @@ Meteor.startup(function() {
 							enumerable: false
 						}
 					});
+					return tesseract;
 				} else {
 					throw new Meteor.Error("Tesseract is undefined");
 				}

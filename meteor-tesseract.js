@@ -1,61 +1,58 @@
-meteorTesseract = {};
-
 Meteor.startup(function() {
 	"use strict";
-	if (Meteor.isServer) {
+	if ( Meteor.isServer ) {
 		(() => {
+
 			function getPathKey ( ) {
-				return Object.keys(this || {}).map( key => {
-					if ( /^tesseract_?path/i.test( key ) ) {
-					 return this[key];
-					}
-				}, this);
+				return Object.keys( this || {} ).reduce( ( prev, key ) => {
+					/^tesseract_?path/i.test( key ) && prev.push( this[key] );
+					return prev;
+				}.bind(this), []);
 			}
 
 			function getPrefixKey ( ) {
-				return Object.keys(this || {}).map( key => {
-					if (/^tessdata_?prefix/i.test( key )) {
-					 return this[key];
-					}
-				}, this);
+				return Object.keys( this || {} ).reduce( ( prev, key ) => {
+					/^tessdata_?prefix/i.test( key ) && prev.push( this[key] );
+					return prev;
+				}.bind(this), []);
 			}
 
 			try {
 				const DEBUG = process.env.NODE_ENV !== 'production';
-				const fs = Npm.require('fs');
-				let tesseract = Npm.require('node-tesseract');
+				const fs = Npm.require( 'fs' );
+				let tesseract = Npm.require( 'node-tesseract' );
 				let stats;
 				// Try to get Tesseract Location from Meteor settings or environment variables
-				let hostTesseract = (function() {
+				let hostConfig = (() => {
 					let binary = [],
 						prefixes = [];
+
 					if ( Meteor.settings ) {
-						if (Meteor.settings.private) {
-							binary = getPathKey.call( Meteor.settings.private );
-							prefixes = getPrefixKey.call( Meteor.settings.private );
-						} else if (Meteor.settings.public) {
-							binary = getPathKey.call( Meteor.settings.public );
-							prefixes = getPrefixKey.call( Meteor.settings.public );
-						} else {
-							binary = getPathKey.call( Meteor.settings );
-							prefixes = getPrefixKey.call( Meteor.settings );
-						}
-					} else if ( process.env ) {
-						binary = getPathKey.call( process.env );
-						prefixes = getPrefixKey.call( process.env );
+						const mostExplicitSettings = Meteor.settings.private || Meteor.settings.public || Meteor.settings;
+						binary = getPathKey.call( mostExplicitSettings );
+						prefixes = getPrefixKey.call( mostExplicitSettings );
 					}
-					//console.log(binary);
+
+					if ( process.env ) {
+						if ( ! binary.length ) {
+							binary = getPathKey.call( process.env );
+						}
+						if ( ! prefixes.length ) {
+							prefixes = getPrefixKey.call( process.env );
+						}
+					}
+					DEBUG && console.log('TESSERACT_PATH : ', binary[0]);
+					DEBUG && console.log('TESSDATA_PREFIX : ', prefixes[0]);
 					return {
 						binaryPath : ( binary.length && binary[0] ) || false,
-						prefixes : ( prefixes.length || false )
+						prefixPath : ( prefixes.length && prefixes[0] || false )
 					};
 				})();
 
-				if ( hostTesseract.binaryPath ) {
+				if ( hostConfig.binaryPath ) {
 					try {
-						stats = fs.lstatSync(tesseractPath);
-						// FS stats to be deprecated
-						if ( ! stats.isFile() ) {
+						stats = fs.lstatSync(hostConfig.binaryPath);
+						if ( ! stats ) {
 							throw new Meteor.Error("Tesseract binary path specified, but unable to get fs stats.");
 						}
 					} catch ( err ) {
@@ -65,50 +62,10 @@ Meteor.startup(function() {
 					throw new Meteor.Error("Tesseract binary path not specified in Meteor settings");
 				}
 
-				if ( typeof tesseract !== 'undefined') {
-					meteorTesseract = Object.create(tesseract, {
-						translateText : {
-							value (image, l = 'eng', psm = 6, binary = tesseractPath ) {
-
-								if ( ! image ) {
-									DEBUG && console.log("No image passed to Tesseract");
-									return false;
-								}
-
-								if ( hostTesseract.prefixes.length && ~hostTesseract.prefixes.indexOf(l) ) {
-									DEBUG && console.log("Tesseract Language prefix not installed. Defaulting to English.");
-									l = 'eng';
-								} else if ( DEBUG ) {
-									Object.keys(hostTesseract.prefixes).foreach( prefix => {
-										console.log("Language Prefix found :", prefix);
-									});
-								}
-
-								const options = {
-									l : l,
-									psm : psm,
-									binary : binary
-								};
-								try {
-									this.process( image, options, (err, text) => {
-										if ( err ) {
-											throw err;
-										} else {
-											return text;
-										}
-									} );
-								} catch ( err ) {
-									throw err;
-								}
-							},
-							configurable : true,
-							writable: false,
-							enumerable: false
-						}
-					});
-					return meteorTesseract;
+				if ( typeof tesseract !== 'undefined' ) {
+					meteorTesseract = tesseract;
 				} else {
-					throw new Meteor.Error("Tesseract is undefined");
+					throw new Meteor.Error("NPM Tesseract is undefined");
 				}
 
 			} catch ( err ) {

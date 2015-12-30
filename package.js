@@ -14,7 +14,7 @@ Package.onUse(function(api) {
   api.versionsFrom('1.2.1');
   api.use('ecmascript');
   api.addFiles(['meteor-tesseract.js'], 'server');
-  api.export('meteorTesseract');
+  api.export('tesseract', 'server');
 });
 
 Package.onTest(function(api) {

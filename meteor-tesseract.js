@@ -1,3 +1,6 @@
+tesseract = Npm.require( 'node-tesseract' );
+console.log(tesseract);
+
 Meteor.startup(function() {
 	"use strict";
 	if ( Meteor.isServer ) {
@@ -20,7 +23,6 @@ Meteor.startup(function() {
 			try {
 				const DEBUG = process.env.NODE_ENV !== 'production';
 				const fs = Npm.require( 'fs' );
-				let tesseract = Npm.require( 'node-tesseract' );
 				let stats;
 				// Try to get Tesseract Location from Meteor settings or environment variables
 				let hostConfig = (() => {
@@ -28,7 +30,9 @@ Meteor.startup(function() {
 						prefixes = [];
 
 					if ( Meteor.settings ) {
-						const mostExplicitSettings = Meteor.settings.private || Meteor.settings.public || Meteor.settings;
+						const mostExplicitSettings = Meteor.settings.private ||
+							(Object.keys(Meteor.settings.public).length > 0 && Meteor.settings.public) ||
+								Meteor.settings;
 						binary = getPathKey.call( mostExplicitSettings );
 						prefixes = getPrefixKey.call( mostExplicitSettings );
 					}
@@ -63,7 +67,8 @@ Meteor.startup(function() {
 				}
 
 				if ( typeof tesseract !== 'undefined' ) {
-					meteorTesseract = tesseract;
+					tesseract.process.bind( hostConfig.binaryPath );
+					DEBUG && console.log('Tesseract configured and exported.');
 				} else {
 					throw new Meteor.Error("NPM Tesseract is undefined");
 				}

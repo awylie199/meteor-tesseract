@@ -13,6 +13,7 @@ Npm.depends({
 Package.onUse(function(api) {
   api.versionsFrom('1.2.1');
   api.use('ecmascript');
+  api.use('meteorhacks:async', 'server');
   api.addFiles(['meteor-tesseract.js'], 'server');
   api.export('tesseract', 'server');
 });

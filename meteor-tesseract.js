@@ -59,16 +59,32 @@ Meteor.startup(function() {
 						if ( ! stats ) {
 							throw new Meteor.Error("Tesseract binary path specified, but unable to get fs stats.");
 						}
+
 					} catch ( err ) {
 						throw err;
 					}
-				} else {
-					throw new Meteor.Error("Tesseract binary path not specified in Meteor settings");
 				}
 
 				if ( typeof tesseract !== 'undefined' ) {
-					tesseract.process.bind( hostConfig.binaryPath );
-					DEBUG && console.log('Tesseract configured and exported.');
+					tesseract.mProcess = (function(tesseract) {
+						return function (image, options, callback) {
+							if ( typeof options === 'function' ) {
+								const callback  = options;
+								let result;
+								if ( hostConfig.binaryPath ) {
+									result = tesseract.process(image, { binary : hostConfig.binaryPath }, callback);
+								} else {
+									result = tesseract.process(image, callback);
+								}
+							} else {
+								if (typeof options === 'object' &&  ! options.hasOwnProperty('binary')) {
+									options.binary = hostConfig.binaryPath;
+								}
+								result = tesseract.process(image, options, callback);
+							}
+							return result;
+						}
+					})(tesseract);
 				} else {
 					throw new Meteor.Error("NPM Tesseract is undefined");
 				}

@@ -55,18 +55,20 @@ Meteor.startup(function() {
 					 * @param {Object} 		options 	Tesseract options
 					 * @return {Object}					Meteorhacks result with error and result properties.
 					 */
-					tesseract.syncProcess = (function(tesseract) {
-						return function (image, options = {}) {
-							return Async.runSync(function(done) {
-								if ( hostConfig.binaryPath && ! options.hasOwnProperty('binary') ) {
-									options.binary = hostConfig.binaryPath;
-								}
-								return tesseract.process(image, options, function(err, text) {
-									done(err, text);
+					if ( ! tesseract.hasOwnProperty('syncProcess') ) {
+						tesseract.syncProcess = (function(tesseract) {
+							return function (image, options = {}) {
+								return Async.runSync(function(done) {
+									if ( hostConfig.binaryPath && ! options.hasOwnProperty('binary') ) {
+										options.binary = hostConfig.binaryPath;
+									}
+									return tesseract.process(image, options, function(err, text) {
+										done(err, text);
+									});
 								});
-							});
-						};
-					})(tesseract);
+							};
+						})(tesseract);
+					}
 				} else {
 					throw new Meteor.Error("NPM Tesseract is undefined");
 				}

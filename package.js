@@ -1,5 +1,5 @@
 Package.describe({
-  name: 'awylie199:meteor-tesseract',
+  name: 'wilybear:meteor-tesseract',
   version: '0.0.1',
   summary: 'Server side optical character recognition (OCR) using Tesseract',
   git: 'https://github.com/awylie199/meteor-tesseract.git',

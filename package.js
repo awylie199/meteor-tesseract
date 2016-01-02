@@ -17,10 +17,3 @@ Package.onUse(function(api) {
   api.addFiles(['meteor-tesseract.js'], 'server');
   api.export('tesseract', 'server');
 });
-
-Package.onTest(function(api) {
-  api.use('ecmascript');
-  api.use('tinytest');
-  api.use('awylie199:meteor-tesseract');
-  api.addFiles('meteor-tesseract-tests.js');
-});
